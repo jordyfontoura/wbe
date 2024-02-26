@@ -12,8 +12,14 @@ interface ICompleteFileInfo extends IFileInfo {
 
 interface ISession {
   path: string;
+  history: string[];
 }
 
+interface INavigation {
+  goto(path: string): void;
+  back(): void;
+  up(): void;
+}
 
 interface IUserConfig {
   icons: {

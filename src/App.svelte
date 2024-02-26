@@ -3,6 +3,7 @@
   import File from "./lib/File.svelte";
   import { getContext, onMount, setContext } from "svelte";
   import { writable } from "svelte/store";
+  import type { ChangeEventHandler, EventHandler } from "svelte/elements";
 
   let files: ICompleteFileInfo[] = [];
   const config = writable<IUserConfig | null>(null);
@@ -10,11 +11,11 @@
 
   setContext("config", config);
   setContext("session", session);
+  setContext("navigation", { up, back, goto });
 
   session.subscribe(listFiles);
 
-  loadConfig();
-
+  onMount(loadConfig);
 
   async function setupConfig() {
     console.log("Loading config");
@@ -31,14 +32,15 @@
 
     session.set({
       path: homedir,
+      history: [],
     });
 
     console.log("Session", session);
   }
 
   async function loadConfig() {
-    setupConfig();
-    setupSession();
+    await setupConfig();
+    await setupSession();
   }
 
   function completeFile(file: IFileInfo): ICompleteFileInfo {
@@ -69,7 +71,10 @@
   }
 
   async function listFiles() {
+    console.log("Listing files ...");
     if (!$config) return;
+
+    console.log("Listing files!", $session);
 
     const response = await invoke<IFileInfo[]>("list_files", {
       path: $session?.path || "..",
@@ -78,15 +83,63 @@
 
     files = response.map(completeFile);
   }
+
+  function up() {
+    if (!$session) return;
+
+    session.update((s: ISession | null) => {
+      if (!s) return s;
+
+      const newPath = s.path.split("/").slice(0, -1).join("/");
+      return { ...s, path: newPath, history: [...s.history, s.path]};
+    });
+  }
+
+  function back() {
+    if (!$session) return;
+
+    session.update((s: ISession | null) => {
+      if (!s) return s;
+
+      const newPath = s.history.pop() || s.path;
+      return { ...s, path: newPath, history: s.history};
+    });
+  }
+
+  function goto(path: string) {
+    session.update((s: ISession | null) => {
+      if (!s) return s;
+
+      return { ...s, path, history: [...s.history, s.path]};
+    });
+  }
+
+  async function tryGoto(path: string) {
+    const response = await invoke<boolean>("is_folder", { path });
+    if (response) goto(path);
+
+    console.log("Not a directory");
+  }
+
+  const handlePathChanged: ChangeEventHandler<HTMLInputElement> = (ev) => {
+    const path = ev.currentTarget.value;
+    if (!path) return;
+    tryGoto(path);
+  }
+
 </script>
 
 <div class="container">
-  <form class="row" on:submit|preventDefault={listFiles}>
-    <button type="submit">Listar Arquivos</button>
-  </form>
-  <ul class="files">
-    {#each files as file}
-      <File info={file} />
-    {/each}
-  </ul>
+  <div class="header">
+    <button class="back" on:click={back} title="go back">Back</button>
+    <input type="text" value={$session?.path} class="path" on:change={handlePathChanged} on:input={handlePathChanged} />
+    <button class="up" on:click={up} title="go to the above folder">Above</button>
+  </div>
+  <main class="content">
+    <ul class="files">
+      {#each files as file}
+        <File info={file} />
+      {/each}
+    </ul>
+  </main>
 </div>

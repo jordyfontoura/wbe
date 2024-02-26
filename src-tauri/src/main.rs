@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::env;
+use std::{env, fs};
 
 use serde::de;
 
@@ -22,7 +22,12 @@ struct FileInfoData {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 enum EOrderBy {
-    Name
+    Name,
+}
+
+#[tauri::command]
+fn is_folder(path: String) -> bool {
+    fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false)
 }
 
 #[tauri::command]
@@ -45,12 +50,16 @@ fn list_files(path: String, order_by: EOrderBy) -> Result<Vec<FileInfoData>, Str
                         let name = entry.file_name();
                         let ext = path.extension();
                         let is_dir = path.is_dir();
-                        let info =FileInfoData {
+                        let info = FileInfoData {
                             path: path.to_string_lossy().to_string(),
                             filename: name.to_string_lossy().to_string(),
                             name: name.to_string_lossy().to_string(),
                             ext: ext.map(|s| s.to_string_lossy().to_string()),
-                            kind: if is_dir { "directory".to_string() } else { "file".to_string() },
+                            kind: if is_dir {
+                                "directory".to_string()
+                            } else {
+                                "file".to_string()
+                            },
                             icon: None,
                         };
 
@@ -88,7 +97,7 @@ fn list_files(path: String, order_by: EOrderBy) -> Result<Vec<FileInfoData>, Str
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![list_files, get_homedir])
+        .invoke_handler(tauri::generate_handler![list_files, get_homedir, is_folder])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
