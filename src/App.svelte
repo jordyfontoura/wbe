@@ -91,7 +91,7 @@
       if (!s) return s;
 
       const newPath = s.path.split("/").slice(0, -1).join("/");
-      return { ...s, path: newPath, history: [...s.history, s.path]};
+      return { ...s, path: newPath, history: [...s.history, s.path] };
     });
   }
 
@@ -102,7 +102,7 @@
       if (!s) return s;
 
       const newPath = s.history.pop() || s.path;
-      return { ...s, path: newPath, history: s.history};
+      return { ...s, path: newPath, history: s.history };
     });
   }
 
@@ -110,8 +110,16 @@
     session.update((s: ISession | null) => {
       if (!s) return s;
 
-      return { ...s, path, history: [...s.history, s.path]};
+      return { ...s, path, history: [...s.history, s.path] };
     });
+
+    if (
+      document.activeElement != document.body &&
+      document.activeElement &&
+      document.activeElement instanceof HTMLElement
+    ) {
+      document.activeElement.blur();
+    }
   }
 
   async function tryGoto(path: string) {
@@ -125,15 +133,22 @@
     const path = ev.currentTarget.value;
     if (!path) return;
     tryGoto(path);
-  }
-
+  };
 </script>
 
 <div class="container">
   <div class="header">
     <button class="back" on:click={back} title="go back">Back</button>
-    <input type="text" value={$session?.path} class="path" on:change={handlePathChanged} on:input={handlePathChanged} />
-    <button class="up" on:click={up} title="go to the above folder">Above</button>
+    <input
+      type="text"
+      value={$session?.path}
+      class="path"
+      on:change={handlePathChanged}
+      on:input={handlePathChanged}
+    />
+    <button class="up" on:click={up} title="go to the above folder"
+      >Above</button
+    >
   </div>
   <main class="content">
     <ul class="files">

@@ -50,6 +50,9 @@ fn list_files(path: String, order_by: EOrderBy) -> Result<Vec<FileInfoData>, Str
                         let name = entry.file_name();
                         let ext = path.extension();
                         let is_dir = path.is_dir();
+                        if is_dir && name.to_string_lossy().starts_with(".") {
+                            continue;
+                        }
                         let info = FileInfoData {
                             path: path.to_string_lossy().to_string(),
                             filename: name.to_string_lossy().to_string(),
