@@ -14,6 +14,56 @@
   -webkit-text-size-adjust: 100%;
 }
 
+.files {
+  display: flex;
+  flex-direction: row;
+  align-items: start;
+  flex-wrap: wrap;
+  gap: 1em 0.5em;
+  padding: 1em;
+}
+
+.file {
+  width: 7em;
+  text-align: center;
+  overflow: hidden;
+  /* max-height: 8em; */
+
+  background-color: inherit;
+  border-radius: 0;
+  box-shadow: none;
+
+  transition: 600ms;
+}
+
+.file:hover {
+  background-color: #ffffff;
+  border-radius: 2px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+  transition: 250ms;
+  cursor: pointer;
+  translate: 0 -1em;
+}
+
+.file-image {
+  width: 3em;
+  height: 3em;
+  margin: 0 auto;
+}
+
+.file-name {
+  display: -webkit-box;
+  font-size: 0.84em;
+  font-weight: 500;
+  margin: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  word-wrap: break-word;
+
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
 .container {
   margin: 0;
   padding-top: 10vh;

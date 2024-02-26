@@ -1,0 +1,79 @@
+{
+  "icons": {
+    "files": {
+      "default": "file",
+      "folders": ["icons"],
+      "associations": {
+        "git": [
+          "^\\.gitignore$",
+          "^\\.gitattributes$"
+        ],
+        "json": [
+          "^.*\\.json$"
+        ],
+        "javascript": [
+          "^.*\\.js$"
+        ],
+        "typescript": [
+          "^.*\\.ts$"
+        ],
+        "html": [
+          "^.*\\.html$"
+        ],
+        "css": [
+          "^.*\\.css$"
+        ],
+        "readme": [
+          "^readme\\..*$"
+        ],
+        "markdown": [
+          "^.*\\.md$"
+        ],
+        "image": [
+          "^.*\\.png$",
+          "^.*\\.jpg$",
+          "^.*\\.jpeg$",
+          "^.*\\.gif$",
+          "^.*\\.svg$",
+          "^.*\\.ico$"
+        ],
+        "tsconfig": [
+          "^tsconfig[-.].*\\.json$"
+        ],
+        "nodejs": [
+          "^package[-.].*\\.json$"
+        ],
+        "svelte": [
+          "^.*\\.svelte$",
+          "^svelte[-.].*\\.json$"
+        ],
+        "vite": [
+          "^vite[-.].*\\.json$"
+        ]
+      }
+    },
+    "folders": {
+      "default": "folder",
+      "folders": ["icons"],
+      "associations": {
+        "folder-src": [
+          "^src$",
+          "^source$",
+          "^src-\\w+$"
+        ],
+        "folder-node": [
+          "^node_modules$"
+        ],
+        "folder-public": [
+          "^public$"
+        ],
+        "folder-vscode": [
+          "^\\.vscode$"
+        ],
+        "folder-git": [
+          "^\\.git$"
+        ]
+      }
+    }
+  }
+}
