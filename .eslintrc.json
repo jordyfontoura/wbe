@@ -14,15 +14,11 @@
     "ecmaVersion": "latest",
     "sourceType": "module",
     "project": "tsconfig.json",
-    "extraFileExtensions": [
-      ".svelte"
-    ]
+    "extraFileExtensions": [".svelte"]
   },
   "overrides": [
     {
-      "files": [
-        "*.svelte"
-      ],
+      "files": ["*.svelte"],
       "parser": "svelte-eslint-parser",
       "parserOptions": {
         "parser": "@typescript-eslint/parser"
@@ -30,25 +26,18 @@
     }
   ],
   "ignorePatterns": [".eslintrc.cjs", "svelte.config.js", "vite.config.ts"],
-  "plugins": [
-    "@typescript-eslint"
-  ],
+  "plugins": ["@typescript-eslint"],
   "rules": {
-    "indent": [
+    "indent": ["error", 2],
+    "linebreak-style": ["error", "unix"],
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"],
+    "prefer-const": [
       "error",
-      2
-    ],
-    "linebreak-style": [
-      "error",
-      "unix"
-    ],
-    "quotes": [
-      "error",
-      "single"
-    ],
-    "semi": [
-      "error",
-      "always"
+      {
+        "destructuring": "any",
+        "ignoreReadBeforeAssign": false
+      }
     ]
   }
 }
