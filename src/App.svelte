@@ -46,7 +46,7 @@
   }
 
   function handleNewTab(){
-    tabNavigation.create("C:/");
+    tabNavigation.create(null);
   }
 
   function handleCloseTab(){

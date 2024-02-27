@@ -87,7 +87,7 @@
   display: flex;
 }
 
-.tab-active {
+.tab.active {
   border: solid 4px #24c9db9f; 
 }
 
