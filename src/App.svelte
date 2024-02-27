@@ -4,6 +4,7 @@
   import { getContext, onMount, setContext } from "svelte";
   import { writable } from "svelte/store";
   import type { ChangeEventHandler, EventHandler } from "svelte/elements";
+  import { getMatches, type CliMatches } from "@tauri-apps/api/cli";
 
   let files: ICompleteFileInfo[] = [];
   const config = writable<IUserConfig | null>(null);
@@ -28,7 +29,8 @@
   }
 
   async function setupSession() {
-    const homedir = await invoke<string>("get_homedir");
+    let { args: { directory: { value }}} = await getMatches();
+    let homedir = value ? value.toString() : await invoke<string>("get_homedir");
 
     session.set({
       path: homedir,

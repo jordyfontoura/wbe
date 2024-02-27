@@ -4,6 +4,7 @@
 use std::{env, fs};
 
 use serde::de;
+use tauri::App;
 
 #[derive(serde::Serialize)]
 struct Session {
@@ -98,8 +99,26 @@ fn list_files(path: String, order_by: EOrderBy) -> Result<Vec<FileInfoData>, Str
     Ok(result)
 }
 
+fn check_if_cli_dir_exists(app: &mut App){
+    match app.get_cli_matches(){
+        Ok(matches) => {
+            if let Some(dir) = matches.args["directory"].value.as_str() {
+                if !is_folder(dir.to_string()){
+                    panic!("Invalid directory passed as argument: {}", dir);
+                }
+            }
+        }
+        Err(err)=>{panic!("CLI Error: {}", err.to_string())}
+    }
+}
+
 fn main() {
     tauri::Builder::default()
+        .setup(|app| {
+            check_if_cli_dir_exists(app);
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![list_files, get_homedir, is_folder])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
