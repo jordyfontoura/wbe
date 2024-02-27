@@ -1,10 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::process;
 use std::{env, fs};
 
-use serde::de;
-use tauri::App;
+use tauri::{App, Error as TauriError};
 
 #[derive(serde::Serialize)]
 struct Session {
@@ -99,27 +99,37 @@ fn list_files(path: String, order_by: EOrderBy) -> Result<Vec<FileInfoData>, Str
     Ok(result)
 }
 
-fn check_if_cli_dir_exists(app: &mut App){
-    match app.get_cli_matches(){
+fn check_if_cli_dir_exists(app: &mut App) -> Result<(), String> {
+    match app.get_cli_matches() {
         Ok(matches) => {
             if let Some(dir) = matches.args["directory"].value.as_str() {
-                if !is_folder(dir.to_string()){
-                    panic!("Invalid directory passed as argument: {}", dir);
+                if !is_folder(dir.to_string()) {
+                    return Err(format!("Invalid directory passed as argument: {}", dir));
                 }
             }
+
+            Ok(())
         }
-        Err(err)=>{panic!("CLI Error: {}", err.to_string())}
+        Err(err) => Err(format!("CLI Error: {}", err.to_string())),
     }
 }
 
-fn main() {
-    tauri::Builder::default()
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let app_status = tauri::Builder::default()
         .setup(|app| {
-            check_if_cli_dir_exists(app);
+            let _ = check_if_cli_dir_exists(app)?;
 
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![list_files, get_homedir, is_folder])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .run(tauri::generate_context!());
+
+    match app_status {
+        Ok(_) => Ok(()),
+        Err(TauriError::Setup(e)) => {
+            eprintln!("Invalid Arguments\n{}", e);
+            process::exit(1);
+        }
+        Err(e) => Err(Box::new(e)),
+    }
 }
