@@ -1,41 +1,42 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/tauri";
-  import File from "./lib/File.svelte";
-  import { getContext, onMount, setContext } from "svelte";
-  import { writable } from "svelte/store";
-  import type { ChangeEventHandler, EventHandler } from "svelte/elements";
+  import { invoke } from '@tauri-apps/api/tauri';
+  import File from './lib/File.svelte';
+  import { onMount, setContext } from 'svelte';
+  import { writable } from 'svelte/store';
+  import type { ChangeEventHandler } from 'svelte/elements';
+  import type { ICompleteFileInfo, IUserConfig, ISession, IFileInfo } from './types';
 
   let files: ICompleteFileInfo[] = [];
   const config = writable<IUserConfig | null>(null);
   const session = writable<ISession | null>(null);
 
-  setContext("config", config);
-  setContext("session", session);
-  setContext("navigation", { up, back, goto });
+  setContext('config', config);
+  setContext('session', session);
+  setContext('navigation', { up, back, goto });
 
   session.subscribe(listFiles);
 
   onMount(loadConfig);
 
   async function setupConfig() {
-    console.log("Loading config");
-    const raw = await fetch("/config.json");
+    console.log('Loading config');
+    const raw = await fetch('/config.json');
     const newConfig = (await raw.json()) as IUserConfig;
 
     config.set(newConfig);
 
-    console.log("Config loaded", newConfig);
+    console.log('Config loaded', newConfig);
   }
 
   async function setupSession() {
-    const homedir = await invoke<string>("get_homedir");
+    const homedir = await invoke<string>('get_homedir');
 
     session.set({
       path: homedir,
       history: [],
     });
 
-    console.log("Session", session);
+    console.log('Session', session);
   }
 
   async function loadConfig() {
@@ -44,20 +45,20 @@
   }
 
   function completeFile(file: IFileInfo): ICompleteFileInfo {
-    if (!$config) throw new Error("Config not loaded");
+    if (!$config) throw new Error('Config not loaded');
 
     let icon: string =
-      file.kind === "file"
+      file.kind === 'file'
         ? $config.icons.files.default
         : $config.icons.folders.default;
 
     const associations =
-      file.kind === "file"
+      file.kind === 'file'
         ? $config.icons.files.associations
         : $config.icons.folders.associations;
     for (const [iconName, patterns] of Object.entries(associations)) {
       if (
-        patterns.some((pattern) => new RegExp(pattern, "i").test(file.filename))
+        patterns.some((pattern) => new RegExp(pattern, 'i').test(file.filename))
       ) {
         icon = iconName;
         break;
@@ -71,14 +72,14 @@
   }
 
   async function listFiles() {
-    console.log("Listing files ...");
+    console.log('Listing files ...');
     if (!$config) return;
 
-    console.log("Listing files!", $session);
+    console.log('Listing files!', $session);
 
-    const response = await invoke<IFileInfo[]>("list_files", {
-      path: $session?.path || "..",
-      orderBy: "Name",
+    const response = await invoke<IFileInfo[]>('list_files', {
+      path: $session?.path || '..',
+      orderBy: 'Name',
     });
 
     files = response.map(completeFile);
@@ -90,7 +91,7 @@
     session.update((s: ISession | null) => {
       if (!s) return s;
 
-      const newPath = s.path.split("/").slice(0, -1).join("/");
+      const newPath = s.path.split('/').slice(0, -1).join('/');
       return { ...s, path: newPath, history: [...s.history, s.path] };
     });
   }
@@ -123,10 +124,10 @@
   }
 
   async function tryGoto(path: string) {
-    const response = await invoke<boolean>("is_folder", { path });
+    const response = await invoke<boolean>('is_folder', { path });
     if (response) goto(path);
 
-    console.log("Not a directory");
+    console.log('Not a directory');
   }
 
   const handlePathChanged: ChangeEventHandler<HTMLInputElement> = (ev) => {

@@ -1,19 +1,20 @@
 <script lang="ts">
-  import { getContext } from "svelte";
+  import { getContext } from 'svelte';
+  import type { ICompleteFileInfo, INavigation } from '../types';
 
   export let info: ICompleteFileInfo;
 
-  const navigation = getContext<INavigation>("navigation");
+  const navigation = getContext<INavigation>('navigation');
 
   function openFile() {
-    alert("Not implemented yet")
+    alert('Not implemented yet');
   }
 
   function openFolder() {
     navigation.goto(info.path);
   }
 
-  const open = info.kind === "file" ? openFile : openFolder;
+  const open = info.kind === 'file' ? openFile : openFolder;
 </script>
 
 <button class="file" on:dblclick={open}>
