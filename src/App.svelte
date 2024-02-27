@@ -9,9 +9,9 @@
 
   let files: ICompleteFileInfo[] = [];
   const config = writable<IUserConfig | null>(null);
-  const session = writable<ISession | null>(null)
+  const session = writable<ISession | null>(null);
 
-  setContext("config", config)
+  setContext('config', config);
   setContext('session', session);
   setContext('navigation', { up, back, goto });
 
