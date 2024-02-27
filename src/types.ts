@@ -1,3 +1,5 @@
+import type { Writable } from "svelte/store";
+
 export interface IFileInfo {
   path: string;
   filename: string;
@@ -11,8 +13,14 @@ export interface ICompleteFileInfo extends IFileInfo {
 }
 
 export interface ISession {
+  id: number;
+  current: boolean;
   path: string;
   history: string[];
+}
+
+export interface ISessionCollection {
+  sessions: ISession[];
 }
 
 export interface INavigation {

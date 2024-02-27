@@ -82,6 +82,15 @@
   animation: fileFocus 4s infinite;
 }
 
+.tabs {
+  width: 100%;
+  display: flex;
+}
+
+.tab-active {
+  border: solid 4px #24c9db9f; 
+}
+
 @keyframes fileFocus {
   90% {
     transform: rotate(0deg);
