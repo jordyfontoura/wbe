@@ -6,7 +6,7 @@
   import type { ICompleteFileInfo, IUserConfig, ISession } from './types';
   import { listFiles, setup, useNavigation } from './app';
 
-  let files: Writable<ICompleteFileInfo[]> = writable([]);
+  const files: Writable<ICompleteFileInfo[]> = writable([]);
   const config = writable<IUserConfig | null>(null);
   const session = writable<ISession | null>(null);
   const navigation = useNavigation(session);
