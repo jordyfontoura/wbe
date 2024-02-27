@@ -1,0 +1,5 @@
+{
+  "*.ts": "eslint --fix",
+  "*.js": "eslint --fix",
+  "*.svelte": "eslint --fix"
+}

@@ -1,39 +1,68 @@
 <script lang="ts">
-  import Greet from './lib/Greet.svelte'
+  import File from './lib/File.svelte';
+  import { onMount, setContext } from 'svelte';
+  import { writable, type Writable } from 'svelte/store';
+  import type { ChangeEventHandler } from 'svelte/elements';
+  import type { ICompleteFileInfo, IUserConfig, ISession } from './types';
+  import { listFiles, setup, useNavigation } from './app';
+
+  const files: Writable<ICompleteFileInfo[]> = writable([]);
+  const config = writable<IUserConfig | null>(null);
+  const session = writable<ISession | null>(null);
+  const navigation = useNavigation(session);
+
+  setContext('config', config);
+  setContext('session', session);
+  setContext('navigation', navigation);
+
+  session.subscribe(handleListFiles);
+
+  onMount(handleSetup);
+
+  function handleSetup() {
+    setup(config, session);
+  }
+
+  function handleListFiles() {
+    listFiles(config, session, files);
+  }
+
+  const handlePathChanged: ChangeEventHandler<HTMLInputElement> = (ev) => {
+    const path = ev.currentTarget.value;
+    if (!path) return;
+    navigation.tryGoto(path);
+  };
+
+  function handleBack() {
+    navigation.back();
+  }
+
+  function handleUp() {
+    navigation.up();
+  }
 </script>
 
-<main class="container">
-  <h1>Welcome to Tauri!</h1>
-
-  <div class="row">
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
-    </a>
-    <a href="https://tauri.app" target="_blank">
-      <img src="/tauri.svg" class="logo tauri" alt="Tauri Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank">
-      <img src="/svelte.svg" class="logo svelte" alt="Svelte Logo" />
-    </a>
+<div class="container">
+  <div class="header">
+    <button class="back" on:click={handleBack} title="go back">Back</button>
+    <input
+      type="text"
+      value={$session?.path}
+      class="path"
+      on:change={handlePathChanged}
+      on:input={handlePathChanged}
+    />
+    <button class="up" on:click={handleUp} title="go to the above folder"
+      >Above</button
+    >
   </div>
+  <main class="content">
+    <ul class="files">
+      {#each $files as file}
+        <File info={file} />
+      {/each}
+    </ul>
+  </main>
 
-  <p>
-    Click on the Tauri, Vite, and Svelte logos to learn more.
-  </p>
-
-  <div class="row">
-    <Greet />
-  </div>
-
-
-</main>
-
-<style>
-  .logo.vite:hover {
-    filter: drop-shadow(0 0 2em #747bff);
-  }
-
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00);
-  }
-</style>
+  <div id="plugins"></div>
+</div>

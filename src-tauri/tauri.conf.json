@@ -10,11 +10,31 @@
     "version": "0.0.0"
   },
   "tauri": {
+    "cli": {
+      "args": [
+        {
+          "name": "directory",
+          "index": 1,
+          "takesValue": true
+        }
+      ]
+    },
     "allowlist": {
       "all": false,
       "shell": {
         "all": false,
         "open": true
+      },
+      "notification": {
+        "all": true
+      },
+      "dialog": {
+        "all": true,
+        "ask": true,
+        "confirm": true,
+        "message": true,
+        "open": true,
+        "save": true
       }
     },
     "windows": [
