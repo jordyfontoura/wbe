@@ -165,7 +165,8 @@
     {#each $sessions.sessions as tab}
       <button
         on:click={() => handleNavigateTab(tab.id)}
-        class={tab.current ? 'tab-active' : 'up'}>{tab.id}</button
+        class="tab"
+        class:active={tab.current}>{tab.id}</button
       >
     {/each}
   </div>
@@ -181,12 +182,10 @@
     <button class="up" on:click={handleUp} title="go to the above folder"
       >Above</button
     >
-    <button class="up" on:click={handleCloseTab} title="close current tab"
+    <button on:click={handleCloseTab} title="close current tab"
       >Close tab</button
     >
-    <button class="up" on:click={handleNewTab} title="add new tab"
-      >New tab</button
-    >
+    <button on:click={handleNewTab} title="add new tab">New tab</button>
   </div>
   <main class="content">
     <!-- svelte-ignore a11y-click-events-have-key-events -->
