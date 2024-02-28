@@ -8,23 +8,19 @@
     IUserConfig,
     ISession,
     ICustomEvent,
-    ISessionCollection
+    ISessionCollection,
   } from './types';
   import { listFiles, setup, useNavigation, useTabNavigation } from './app';
-  import {
-    isRegistered,
-    register as registerShortcut,
-    unregister,
-    unregisterAll,
-  } from '@tauri-apps/api/globalShortcut';
+  import { useShortcuts } from './services/shortcuts';
 
   const files: Writable<ICompleteFileInfo[]> = writable([]);
   const config = writable<IUserConfig | null>(null);
   const session = writable<ISession | null>(null);
-  const sessions = writable<ISessionCollection>({sessions: []});
+  const sessions = writable<ISessionCollection>({ sessions: [] });
   const navigation = useNavigation(session);
   const selections = writable<string[]>([]);
   const tabNavigation = useTabNavigation(session, sessions);
+  const shortcuts = useShortcuts();
 
   setContext('config', config);
   setContext('sessions', sessions);
@@ -37,7 +33,7 @@
   onMount(handleSetup);
 
   onDestroy(() => {
-    unregisterAll();
+    shortcuts.unsubscribeAll();
   });
 
   async function handleSetup() {
@@ -47,19 +43,8 @@
   }
 
   async function registerShortcuts() {
-    try {
-      if (await isRegistered('Control+a')) {
-        await unregister('Control+a');
-      }
-      if (await isRegistered('Control+i')) {
-        await unregister('Control+i');
-      }
-
-      await registerShortcut('Control+a', selectAllFiles);
-      await registerShortcut('Control+i', invertSelection);
-    } catch (error) {
-      console.error('Failed to register shortcuts', error);
-    }
+    shortcuts.subscribe(['Control', 'a'], selectAllFiles);
+    shortcuts.subscribe(['Control', 'i'], invertSelection);
   }
 
   function handleListFiles() {
@@ -161,16 +146,16 @@
       deselectAllFiles();
     }
   }
-  function handleNewTab(){
+  function handleNewTab() {
     tabNavigation.create(null);
   }
 
-  function handleCloseTab(){
-    if(!$session) return;
+  function handleCloseTab() {
+    if (!$session) return;
     tabNavigation.close($session.id);
   }
 
-  function handleNavigateTab(id: number){
+  function handleNavigateTab(id: number) {
     tabNavigation.navigate(id);
   }
 </script>
@@ -178,13 +163,14 @@
 <div class="container">
   <div class="tabs">
     {#each $sessions.sessions as tab}
-      <button on:click={()=>handleNavigateTab(tab.id)} class={tab.current ? 'tab-active': 'up'}>{tab.id}</button>
+      <button
+        on:click={() => handleNavigateTab(tab.id)}
+        class={tab.current ? 'tab-active' : 'up'}>{tab.id}</button
+      >
     {/each}
   </div>
   <div class="header">
-    <button class="back" on:click={handleBack} title="go back">
-      Back
-    </button>
+    <button class="back" on:click={handleBack} title="go back"> Back </button>
     <input
       type="text"
       value={$session?.path}
