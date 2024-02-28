@@ -14,11 +14,6 @@
   const selections = writable<string[]>([]);
   const keyboard = useKeyboard();
 
-  selections.subscribe((selections) => {
-    console.log('selections changed', selections);
-    console.log(keyboard.isPressed('Control'));
-  });
-
   setContext('config', config);
   setContext('session', session);
   setContext('navigation', navigation);
