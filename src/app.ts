@@ -1,8 +1,7 @@
-import { get, writable, type Writable } from 'svelte/store';
+import { get, type Writable } from 'svelte/store';
 import type { ICompleteFileInfo, IFileInfo, ISession, ISessionCollection, IUserConfig } from './types';
 import { invoke } from '@tauri-apps/api/tauri';
 import { getMatches } from '@tauri-apps/api/cli';
-import type { Session } from 'inspector';
 
 export async function setupConfig(config: Writable<IUserConfig | null>) {
   console.log('Loading config');
@@ -24,11 +23,11 @@ export async function setupSessions(curSession: Writable<ISession | null>, sessi
     current: true,
     path: homedir,
     history: [],
-  }
+  };
 
   sessions.set({
     sessions: [ session ]
-  })
+  });
 
   curSession.set(session);
 
@@ -39,7 +38,7 @@ export async function setupSessions(curSession: Writable<ISession | null>, sessi
       const index = collection.sessions.findIndex(x => s.id === x.id);
       if (index !== -1) collection.sessions[index] = s;
       return collection;
-    })
+    });
   });
 
   console.log('Current Session', curSession);
@@ -99,7 +98,7 @@ export function useTabNavigation(session: Writable<ISession | null>, sessions: W
     create,
     close,
     navigate
-  }
+  };
 
   async function create(dir: string | null){
     const $sessions = get(sessions);
@@ -113,15 +112,15 @@ export function useTabNavigation(session: Writable<ISession | null>, sessions: W
       current: false,
       path,
       history: []
-    }
+    };
 
     sessions.update(s=>({
       ...s,
       sessions: [...s.sessions, newSession],
     }));
 
-    console.log("New session created")
-    console.log("Sessions: " + $sessions.sessions);
+    console.log('New session created');
+    console.log('Sessions: ' + $sessions.sessions);
   }
 
   function navigate(tabId: number){
@@ -135,7 +134,7 @@ export function useTabNavigation(session: Writable<ISession | null>, sessions: W
     sessions.update(s=>({
       ...s,
       sessions: s.sessions.map(session => ({ ...session, current: session.id === tabId }))
-    }))
+    }));
   }
 
   function close(sessionId: number){
@@ -145,7 +144,7 @@ export function useTabNavigation(session: Writable<ISession | null>, sessions: W
     sessions.update(s=>{
       s.sessions.splice(sessionId, 1);
       return s;
-    })
+    });
   }
 }
 
