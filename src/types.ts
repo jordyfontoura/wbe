@@ -3,7 +3,7 @@ export interface IFileInfo {
   filename: string;
   name: string;
   ext?: string;
-  kind: 'file' | 'folder';
+  kind: 'file' | 'directory';
 }
 
 export interface ICompleteFileInfo extends IFileInfo {
@@ -40,7 +40,11 @@ export interface IUserConfig {
   };
 }
 
+export interface ICustomEvent<T = unknown, E extends Event = Event> {
+  data: T;
+  originalEvent: E;
+}
 
 export enum EOrderBy {
-  Name = 'Name'
+  Name = 'Name',
 }

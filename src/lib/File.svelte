@@ -1,26 +1,26 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { ICompleteFileInfo } from '../types';
+  import type { ICompleteFileInfo, ICustomEvent } from '../types';
 
   export let info: ICompleteFileInfo;
   export let selected = false;
 
   const dispatch = createEventDispatcher<{
-    select: ICompleteFileInfo;
-    open: ICompleteFileInfo;
-    contextmenu: ICompleteFileInfo;
+    select: ICustomEvent<ICompleteFileInfo, MouseEvent>;
+    open: ICustomEvent<ICompleteFileInfo, MouseEvent>;
+    contextmenu: ICustomEvent<ICompleteFileInfo, MouseEvent>;
   }>();
 
-  function handleSelect() {
-    dispatch('select', info);
+  function handleSelect(event: MouseEvent) {
+    dispatch('select', { originalEvent: event, data: info});
   }
 
-  function handleDblClick() {
-    dispatch('open', info);
+  function handleDblClick(event: MouseEvent) {
+    dispatch('open', {originalEvent: event, data: info});
   }
 
-  function handleContextMenu() {
-    dispatch('contextmenu', info);
+  function handleContextMenu(event: MouseEvent) {
+    dispatch('contextmenu', {originalEvent: event, data: info});
   }
 </script>
 

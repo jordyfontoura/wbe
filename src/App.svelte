@@ -1,31 +1,60 @@
 <script lang="ts">
   import File from './lib/File.svelte';
-  import { onMount, setContext } from 'svelte';
+  import { onMount, setContext, onDestroy } from 'svelte';
   import { writable, type Writable } from 'svelte/store';
   import type { ChangeEventHandler } from 'svelte/elements';
-  import type { ICompleteFileInfo, IUserConfig, ISession } from './types';
+  import type {
+    ICompleteFileInfo,
+    IUserConfig,
+    ISession,
+    ICustomEvent,
+  } from './types';
   import { listFiles, setup, useNavigation } from './app';
-  import { useKeyboard } from './services/keyboard';
+  import {
+    isRegistered,
+    register as registerShortcut,
+    unregister,
+    unregisterAll,
+  } from '@tauri-apps/api/globalShortcut';
 
   const files: Writable<ICompleteFileInfo[]> = writable([]);
   const config = writable<IUserConfig | null>(null);
   const session = writable<ISession | null>(null);
   const navigation = useNavigation(session);
   const selections = writable<string[]>([]);
-  const keyboard = useKeyboard();
 
   setContext('config', config);
   setContext('session', session);
   setContext('navigation', navigation);
 
   session.subscribe(handleListFiles);
-  keyboard.subscribeShortcut('Control+a', selectAllFiles);
-  keyboard.subscribeShortcut('Control+i', invertSelection);
 
   onMount(handleSetup);
 
-  function handleSetup() {
-    setup(config, session);
+  onDestroy(() => {
+    unregisterAll();
+  });
+
+  async function handleSetup() {
+    console.log('handleSetup');
+    await setup(config, session);
+    await registerShortcuts();
+  }
+
+  async function registerShortcuts() {
+    try {
+      if (await isRegistered('Control+a')) {
+        await unregister('Control+a');
+      }
+      if (await isRegistered('Control+i')) {
+        await unregister('Control+i');
+      }
+
+      await registerShortcut('Control+a', selectAllFiles);
+      await registerShortcut('Control+i', invertSelection);
+    } catch (error) {
+      console.error('Failed to register shortcuts', error);
+    }
   }
 
   function handleListFiles() {
@@ -46,27 +75,35 @@
     navigation.up();
   }
 
-  function handleOpen(event: CustomEvent<ICompleteFileInfo>) {
-    const fileInfo = event.detail;
+  function handleOpen(
+    customEvent: CustomEvent<ICustomEvent<ICompleteFileInfo, MouseEvent>>,
+  ) {
+    const { data: fileInfo } = customEvent.detail;
 
-    if (fileInfo.kind !== 'folder') {
-      alert('Only folders can be opened');
+    if (fileInfo.kind !== 'directory') {
+      alert(`Only folders can be opened, not ${fileInfo.kind}`);
       return;
     }
 
     navigation.goto(fileInfo.path);
   }
 
-  function handleFileContextMenu(event: CustomEvent<ICompleteFileInfo>) {
-    event.stopPropagation();
+  function handleFileContextMenu(
+    customEvent: CustomEvent<ICustomEvent<ICompleteFileInfo, MouseEvent>>,
+  ) {
+    customEvent.detail.originalEvent.stopPropagation();
 
-    alert(`Context menu for ${event.detail.path} is not implemented yet`);
+    alert(
+      `Context menu for ${customEvent.detail.data.path} is not implemented yet`,
+    );
   }
 
-  function handleFileSelect(event: CustomEvent<ICompleteFileInfo>) {
-    const fileInfo = event.detail;
-    const ctrl = keyboard.isPressed('Control');
-    const shift = keyboard.isPressed('Shift');
+  function handleFileSelect(
+    customEvent: CustomEvent<ICustomEvent<ICompleteFileInfo, MouseEvent>>,
+  ) {
+    const { data: fileInfo, originalEvent: event } = customEvent.detail;
+    const ctrl = event.ctrlKey;
+    const shift = event.shiftKey;
 
     if (!ctrl && !shift) {
       selections.set([fileInfo.path]);
@@ -153,8 +190,3 @@
 
   <div id="plugins"></div>
 </div>
-
-<svelte:window
-  on:keydown|preventDefault={keyboard.onKeyDown}
-  on:keyup|preventDefault={keyboard.onKeyUp}
-/>
