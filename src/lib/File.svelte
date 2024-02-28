@@ -1,23 +1,36 @@
 <script lang="ts">
-  import { getContext } from 'svelte';
-  import type { ICompleteFileInfo, INavigation } from '../types';
+  import { createEventDispatcher } from 'svelte';
+  import type { ICompleteFileInfo } from '../types';
 
   export let info: ICompleteFileInfo;
+  export let selected = false;
 
-  const navigation = getContext<INavigation>('navigation');
+  const dispatch = createEventDispatcher<{
+    select: ICompleteFileInfo;
+    open: ICompleteFileInfo;
+    contextmenu: ICompleteFileInfo;
+  }>();
 
-  function openFile() {
-    alert('Not implemented yet');
+  function handleSelect() {
+    dispatch('select', info);
   }
 
-  function openFolder() {
-    navigation.goto(info.path);
+  function handleDblClick() {
+    dispatch('open', info);
   }
 
-  const open = info.kind === 'file' ? openFile : openFolder;
+  function handleContextMenu() {
+    dispatch('contextmenu', info);
+  }
 </script>
 
-<button class="file" on:dblclick={open}>
+<button
+  class="file"
+  class:selected={selected}
+  on:dblclick={handleDblClick}
+  on:click={handleSelect}
+  on:contextmenu={handleContextMenu}
+>
   <img src={info.icon} alt={info.path} class="file-image" />
   <p class="file-name">{info.filename}</p>
 </button>
