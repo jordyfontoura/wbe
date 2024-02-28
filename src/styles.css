@@ -88,6 +88,15 @@
   outline: solid 2px #1b9dac;
 }
 
+.tabs {
+  width: 100%;
+  display: flex;
+}
+
+.tab.active {
+  border: solid 4px #24c9db9f; 
+}
+
 @keyframes fileFocus {
   90% {
     rotate: 0deg;

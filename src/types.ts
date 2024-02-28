@@ -11,8 +11,14 @@ export interface ICompleteFileInfo extends IFileInfo {
 }
 
 export interface ISession {
+  id: number;
+  current: boolean;
   path: string;
   history: string[];
+}
+
+export interface ISessionCollection {
+  sessions: ISession[];
 }
 
 export interface INavigation {
