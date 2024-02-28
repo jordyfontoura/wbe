@@ -1,7 +1,8 @@
-import { get, type Writable } from 'svelte/store';
-import type { ICompleteFileInfo, IFileInfo, ISession, IUserConfig } from './types';
+import { get, writable, type Writable } from 'svelte/store';
+import type { ICompleteFileInfo, IFileInfo, ISession, ISessionCollection, IUserConfig } from './types';
 import { invoke } from '@tauri-apps/api/tauri';
 import { getMatches } from '@tauri-apps/api/cli';
+import type { Session } from 'inspector';
 
 export async function setupConfig(config: Writable<IUserConfig | null>) {
   console.log('Loading config');
@@ -13,22 +14,40 @@ export async function setupConfig(config: Writable<IUserConfig | null>) {
   console.log('Config loaded', newConfig);
 }
 
-export async function setupSession(session: Writable<ISession | null>) {
+export async function setupSessions(curSession: Writable<ISession | null>, sessions: Writable<ISessionCollection>) {
   const matches = await getMatches();
   const value = matches.args.directory.value;
   const homedir = value ? value.toString() : await invoke<string>('get_homedir');
 
-  session.set({
+  const session = {
+    id: 0,
+    current: true,
     path: homedir,
     history: [],
+  }
+
+  sessions.set({
+    sessions: [ session ]
+  })
+
+  curSession.set(session);
+
+  curSession.subscribe(s=>{
+    if(!s) return;
+
+    sessions.update(collection=>{
+      const index = collection.sessions.findIndex(x => s.id === x.id);
+      if (index !== -1) collection.sessions[index] = s;
+      return collection;
+    })
   });
 
-  console.log('Session', session);
+  console.log('Current Session', curSession);
 }
 
-export async function setup(config: Writable<IUserConfig | null>, session: Writable<ISession | null>) {
+export async function setup(config: Writable<IUserConfig | null>, currentSession: Writable<ISession | null>, sessions: Writable<ISessionCollection>) {
   await setupConfig(config);
-  await setupSession(session);
+  await setupSessions(currentSession, sessions);
 }
 
 function completeFile(config: Writable<IUserConfig | null>, file: IFileInfo): ICompleteFileInfo {
@@ -75,12 +94,67 @@ export async function listFiles(config: Writable<IUserConfig | null>, session: W
   files.set(response.map((file) => completeFile(config, file)));
 }
 
+export function useTabNavigation(session: Writable<ISession | null>, sessions: Writable<ISessionCollection>){
+  return {
+    create,
+    close,
+    navigate
+  }
+
+  async function create(dir: string | null){
+    const $sessions = get(sessions);
+    if(!$sessions)
+      return;
+
+    const path = !dir ? await invoke<string>('get_homedir') : dir;
+
+    const newSession = {
+      id: $sessions.sessions.reduce((max, obj) => obj.id > max ? obj.id : max, 0) + 1,
+      current: false,
+      path,
+      history: []
+    }
+
+    sessions.update(s=>({
+      ...s,
+      sessions: [...s.sessions, newSession],
+    }));
+
+    console.log("New session created")
+    console.log("Sessions: " + $sessions.sessions);
+  }
+
+  function navigate(tabId: number){
+    const $sessions = get(sessions);
+    const $session = get(session);
+    if(!$sessions || !$session)
+      return;
+
+    const target = $sessions.sessions.find(x => x.id == tabId) || null;
+    session.set(target);
+    sessions.update(s=>({
+      ...s,
+      sessions: s.sessions.map(session => ({ ...session, current: session.id === tabId }))
+    }))
+  }
+
+  function close(sessionId: number){
+    const $sessions = get(sessions);
+    if(!$sessions) return;
+
+    sessions.update(s=>{
+      s.sessions.splice(sessionId, 1);
+      return s;
+    })
+  }
+}
+
 export function useNavigation(session: Writable<ISession | null>) {
   return {
     up,
     back,
     goto,
-    tryGoto,
+    tryGoto
   };
 
   function up() {
