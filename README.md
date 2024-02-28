@@ -72,3 +72,4 @@ This project is licensed under the [MIT License](LICENSE).
 ## Stay in touch
 
 - Author - [Jórdy Fontoura](https://www.linkedin.com/in/jordy-fontoura/)
+- Co-Author - [Guilherme Luiz](https://www.linkedin.com/in/guilherme-luiz-a95213293/)
