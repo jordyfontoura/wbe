@@ -1,36 +1,42 @@
 <script lang="ts">
   import File from './lib/File.svelte';
   import { onMount, setContext, onDestroy } from 'svelte';
-  import { writable, type Writable } from 'svelte/store';
+  import {
+    get,
+    writable,
+    derived,
+    type Writable,
+    readonly,
+  } from 'svelte/store';
   import type { ChangeEventHandler } from 'svelte/elements';
-  import type {
-    ICompleteFileInfo,
-    IUserConfig,
-    ISession,
-    ICustomEvent,
-    ISessionCollection,
-  } from './types';
-  import { listFiles, setup, useNavigation, useTabNavigation } from './app';
+  import type { ICompleteFileInfo, IUserConfig, ICustomEvent } from './types';
   import { useShortcuts } from './services/shortcuts';
+  import { setupConfig, useNavigation } from './app';
+  import { useSessions } from './store/sessions';
+  import { searchFiles } from './store/files';
 
+  const shortcuts = useShortcuts();
   const files: Writable<ICompleteFileInfo[]> = writable([]);
   const config = writable<IUserConfig | null>(null);
-  const session = writable<ISession | null>(null);
-  const sessions = writable<ISessionCollection>({ sessions: [] });
-  const navigation = useNavigation(session);
   const selections = writable<string[]>([]);
-  const tabNavigation = useTabNavigation(session, sessions);
-  const shortcuts = useShortcuts();
+  const {
+    currentSession,
+    currentIndex: currentSessionIndex,
+    sessions,
+    ...sessionsContext
+  } = useSessions(derived(config, ($config) => $config!.defaultPath));
+  const navigator = useNavigation(currentSession);
+  let setupPromise: Promise<void> | null = null;
 
   setContext('config', config);
-  setContext('sessions', sessions);
-  setContext('session', session); // Talvez faça sentido mudar o nome do contexto para current Session ou algo do tipo.
-  setContext('navigation', navigation);
-  setContext('tabNavigation', tabNavigation);
 
-  session.subscribe(handleListFiles);
-
-  onMount(handleSetup);
+  onMount(() => {
+    setupPromise = handleSetup();
+    currentSession.subscribe((session) => {
+      console.log('session changed', session);
+      session.subscribe(handleListFiles);
+    });
+  });
 
   onDestroy(() => {
     shortcuts.unsubscribeAll();
@@ -38,8 +44,11 @@
 
   async function handleSetup() {
     console.log('handleSetup');
-    await setup(config, session, sessions);
+    await setupConfig(config);
+    sessionsContext.setup();
     await registerShortcuts();
+    handleListFiles();
+    console.log('handleSetup done');
   }
 
   async function registerShortcuts() {
@@ -48,21 +57,27 @@
   }
 
   function handleListFiles() {
-    listFiles(config, session, files);
+    const readonlySession = readonly(get(currentSession));
+    searchFiles(config, readonlySession)
+      .then((receivedFiles) => {
+        files.set(receivedFiles);
+      })
+      .catch((error) => console.error('Failed to list files', error));
   }
 
   const handlePathChanged: ChangeEventHandler<HTMLInputElement> = (ev) => {
     const path = ev.currentTarget.value;
     if (!path) return;
-    navigation.tryGoto(path);
+
+    navigator.tryGoto(path);
   };
 
   function handleBack() {
-    navigation.back();
+    navigator.back();
   }
 
   function handleUp() {
-    navigation.up();
+    navigator.up();
   }
 
   function handleOpen(
@@ -75,7 +90,7 @@
       return;
     }
 
-    navigation.goto(fileInfo.path);
+    navigator.goto(fileInfo.path);
   }
 
   function handleFileContextMenu(
@@ -147,61 +162,77 @@
     }
   }
   function handleNewTab() {
-    tabNavigation.create(null);
+    sessionsContext.add();
   }
 
   function handleCloseTab() {
-    if (!$session) return;
-    tabNavigation.close($session.id);
+    sessionsContext.remove();
   }
 
   function handleNavigateTab(id: number) {
-    tabNavigation.navigate(id);
+    sessionsContext.setCurrent(id);
   }
+
+  $: tabs = $sessions.map((session, index) => ({
+    name: index.toString(),
+    path: get(session).path,
+    active: index === $currentSessionIndex,
+    click: () => handleNavigateTab(index),
+  }));
 </script>
 
-<div class="container">
-  <div class="tabs">
-    {#each $sessions.sessions as tab}
-      <button
-        on:click={() => handleNavigateTab(tab.id)}
-        class="tab"
-        class:active={tab.current}>{tab.id}</button
-      >
-    {/each}
-  </div>
-  <div class="header">
-    <button class="back" on:click={handleBack} title="go back"> Back </button>
-    <input
-      type="text"
-      value={$session?.path}
-      class="path"
-      on:change={handlePathChanged}
-      on:input={handlePathChanged}
-    />
-    <button class="up" on:click={handleUp} title="go to the above folder"
-      >Above</button
-    >
-    <button on:click={handleCloseTab} title="close current tab"
-      >Close tab</button
-    >
-    <button on:click={handleNewTab} title="add new tab">New tab</button>
-  </div>
-  <main class="content">
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-    <ul class="files" on:click={handleDeselectAllFiles}>
-      {#each $files as file}
-        <File
-          info={file}
-          selected={$selections.includes(file.path)}
-          on:open={handleOpen}
-          on:contextmenu={handleFileContextMenu}
-          on:select={handleFileSelect}
+{#await setupPromise}
+  <div>Loading...</div>
+{:then}
+  {#if !$config}
+    <div>Loading Config...</div>
+  {:else}
+    <div class="container">
+      <div class="tabs">
+        {#each tabs as tab}
+          <button on:click={tab.click} class="tab" class:active={tab.active}
+            >{tab.name}</button
+          >
+        {/each}
+      </div>
+      <div class="header">
+        <button class="back" on:click={handleBack} title="go back">
+          Back
+        </button>
+        <input
+          type="text"
+          value={get(get(currentSession)).path}
+          class="path"
+          on:change={handlePathChanged}
+          on:input={handlePathChanged}
         />
-      {/each}
-    </ul>
-  </main>
+        <button class="up" on:click={handleUp} title="go to the above folder"
+          >Above</button
+        >
+        <button class="up" on:click={handleCloseTab} title="close current tab"
+          >Close tab</button
+        >
+        <button class="up" on:click={handleNewTab} title="add new tab"
+          >New tab</button
+        >
+      </div>
+      <main class="content">
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+        <ul class="files" on:click={handleDeselectAllFiles}>
+          {#each $files as file}
+            <File
+              info={file}
+              selected={$selections.includes(file.path)}
+              on:open={handleOpen}
+              on:contextmenu={handleFileContextMenu}
+              on:select={handleFileSelect}
+            />
+          {/each}
+        </ul>
+      </main>
 
-  <div id="plugins"></div>
-</div>
+      <div id="plugins"></div>
+    </div>
+  {/if}
+{/await}
