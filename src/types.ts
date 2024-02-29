@@ -11,8 +11,6 @@ export interface ICompleteFileInfo extends IFileInfo {
 }
 
 export interface ISession {
-  id: number;
-  current: boolean;
   path: string;
   history: string[];
 }
@@ -44,6 +42,7 @@ export interface IUserConfig {
       };
     };
   };
+  defaultPath: string;
 }
 
 export interface ICustomEvent<T = unknown, E extends Event = Event> {
